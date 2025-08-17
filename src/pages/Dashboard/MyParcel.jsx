@@ -10,23 +10,19 @@ import {
   CreditCardIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
+import { useNavigate } from "react-router";
 
 const MyParcel = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const axiosSecure = useAxiosSecure();
-  const { data: parcels } = useQuery({
+  const { data: parcels = [], refetch } = useQuery({
     queryKey: ["my-parcels", user.email],
     queryFn: async () => {
       const res = await axiosSecure.get(`/parcels?email=${user.email}`);
       return res.data;
     },
   });
-  //   queryKey: ["my-parcels", user.email],
-  //   queryFn: async () => {
-  //     const res = await axiosSecure.get(`/parcels?email=${user.email}`);
-  //     return res.data;
-  //   },
-  // });
 
   // Handlers
   const handleView = (parcel) => {
@@ -55,10 +51,10 @@ const MyParcel = () => {
     });
   };
 
-  const handlePay = (parcel) => {
+  const handlePay = (id) => {
     Swal.fire({
       title: "Confirm Payment",
-      text: `Mark parcel ${parcel.tracking_id} as paid?`,
+      text: `Mark parcel ${id} as paid?`,
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Yes, Pay",
@@ -73,6 +69,8 @@ const MyParcel = () => {
       },
     }).then((result) => {
       if (result.isConfirmed) {
+        navigate(`/dashboard/payment/${id}`);
+
         Swal.fire({
           title: "Payment Successful!",
           text: "The parcel has been marked as paid.",
@@ -83,29 +81,56 @@ const MyParcel = () => {
               "bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded",
           },
         });
-        refetch(); // refresh your parcel list
+        refetch();
       }
     });
   };
 
-  const handleDelete = (parcel) => {
+  const handleDelete = (id) => {
     Swal.fire({
       title: "Are you sure?",
-      text: `Delete parcel ${parcel.tracking_id}? This cannot be undone.`,
+      text: "This action cannot be undone. The parcel will be permanently deleted!",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Yes, Delete",
       cancelButtonText: "Cancel",
       buttonsStyling: false,
-      customClass: { actions: "flex justify-center gap-3 mt-4" },
-    }).then((result) => {
+      customClass: {
+        actions: "flex justify-center gap-3 mt-4",
+        confirmButton:
+          "bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700",
+        cancelButton:
+          "bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400",
+      },
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        Swal.fire({
-          title: "Deleted!",
-          text: "Parcel has been deleted.",
-          icon: "success",
-        });
-        refetch();
+        try {
+          const res = await axiosSecure.delete(`/parcels/${id}`);
+
+          if (res.data.deletedCount > 0) {
+            refetch(); // Refresh the parcels list
+            Swal.fire({
+              title: "Deleted!",
+              text: "The parcel has been deleted successfully.",
+              icon: "success",
+              confirmButtonText: "OK",
+              buttonsStyling: false,
+              customClass: {
+                confirmButton:
+                  "bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700",
+              },
+            });
+          } else {
+            Swal.fire("Error", "Parcel not found or already deleted.", "error");
+          }
+        } catch (error) {
+          console.error("Error deleting parcel:", error);
+          Swal.fire(
+            "Error",
+            "Failed to delete parcel. Try again later.",
+            "error"
+          );
+        }
       }
     });
   };
@@ -134,9 +159,10 @@ const MyParcel = () => {
         ) : (
           <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px]">
+              <table className="w-full min-w-[800px]">
                 <thead className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
                   <tr className="uppercase text-sm font-medium">
+                    <th className="py-4 px-4">Title</th>
                     <th className="py-4 px-4">Type</th>
                     <th className="py-4 px-4">Created At</th>
                     <th className="py-4 px-4">Payment Status</th>
@@ -158,6 +184,9 @@ const MyParcel = () => {
                         idx % 2 === 0 ? "bg-gray-50" : "bg-white"
                       }`}
                     >
+                      <td className="py-4 px-4 font-medium text-gray-800">
+                        {parcel.title}
+                      </td>
                       <td className="py-4 px-4 font-semibold text-gray-700">
                         {parcel.type === "document"
                           ? "Document"
@@ -195,14 +224,14 @@ const MyParcel = () => {
                           <EyeIcon className="h-5 w-5" />
                         </button>
                         <button
-                          onClick={() => handlePay(parcel)}
+                          onClick={() => handlePay(parcel._id)}
                           className="flex items-center justify-center w-9 h-9 rounded-full bg-green-100 text-green-600 hover:bg-green-500 hover:text-white shadow-md transform hover:scale-110 transition-all duration-200"
                           title="Mark as Paid"
                         >
                           <CreditCardIcon className="h-5 w-5" />
                         </button>
                         <button
-                          onClick={() => handleDelete(parcel)}
+                          onClick={() => handleDelete(parcel._id)}
                           className="flex items-center justify-center w-9 h-9 rounded-full bg-red-100 text-red-600 hover:bg-red-500 hover:text-white shadow-md transform hover:scale-110 transition-all duration-200"
                           title="Delete Parcel"
                         >
