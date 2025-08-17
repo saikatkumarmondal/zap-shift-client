@@ -3,6 +3,8 @@ import Swal from "sweetalert2";
 import { useLoaderData } from "react-router";
 import useAuth from "../../hooks/useAuth";
 
+import useAxiosSecure from "../../hooks/useAxiosSecure";
+
 const generateTrackingID = () => {
   const date = new Date();
   const datePart = date.toISOString().split("T")[0].replace(/-/g, "");
@@ -18,6 +20,7 @@ const SendParcel = () => {
     formState: { errors },
   } = useForm();
   const { user } = useAuth();
+  const axiosSecure = useAxiosSecure();
 
   const serviceCenters = useLoaderData();
   // Extract unique regions
@@ -29,26 +32,26 @@ const SendParcel = () => {
   const parcelType = watch("type");
   const senderRegion = watch("sender_region");
   const receiverRegion = watch("receiver_region");
-
   const onSubmit = (data) => {
     const weight = parseFloat(data.weight) || 0;
     const isSameDistrict = data.sender_center === data.receiver_center;
 
     let baseCost = 0;
     let extraCost = 0;
-    let breakdown = "";
+    let breakdownDetails = "";
 
+    // Pricing logic (same as before)
     if (data.type === "document") {
       baseCost = isSameDistrict ? 60 : 80;
-      breakdown = `Document delivery ${
-        isSameDistrict ? "within" : "outside"
-      } the district.`;
+      breakdownDetails = `<p>Base Price: <strong>৳${baseCost}</strong> (${
+        isSameDistrict ? "within district" : "outside district"
+      })</p>`;
     } else {
       if (weight <= 3) {
         baseCost = isSameDistrict ? 110 : 150;
-        breakdown = `Non-document up to 3kg ${
-          isSameDistrict ? "within" : "outside"
-        } the district.`;
+        breakdownDetails = `<p>Base Price (up to 3kg): <strong>৳${baseCost}</strong> (${
+          isSameDistrict ? "within district" : "outside district"
+        })</p>`;
       } else {
         const extraKg = weight - 3;
         const perKgCharge = extraKg * 40;
@@ -56,61 +59,93 @@ const SendParcel = () => {
         baseCost = isSameDistrict ? 110 : 150;
         extraCost = perKgCharge + districtExtra;
 
-        breakdown = `
-        Non-document over 3kg ${
-          isSameDistrict ? "within" : "outside"
-        } the district.<br/>
-        Extra charge: ৳40 x ${extraKg.toFixed(1)}kg = ৳${perKgCharge}<br/>
-        ${districtExtra ? "+ ৳40 extra for outside district delivery" : ""}
+        breakdownDetails = `
+        <p>Base Price (first 3kg): <strong>৳${baseCost}</strong></p>
+        <p>Extra Weight: <strong>৳40 x ${extraKg.toFixed(
+          1
+        )}kg = ৳${perKgCharge}</strong></p>
+        ${
+          districtExtra
+            ? `<p>Outside District Extra: <strong>৳${districtExtra}</strong></p>`
+            : ""
+        }
       `;
       }
     }
 
     const totalCost = baseCost + extraCost;
 
+    // First SweetAlert: Pricing Breakdown
     Swal.fire({
-      title: "Delivery Cost Breakdown",
+      title: "Delivery Cost",
       icon: "info",
       html: `
-      <div class="text-left text-base space-y-2">
+      <div class="text-left text-base space-y-2 max-w-[420px] mx-auto">
         <p><strong>Parcel Type:</strong> ${data.type}</p>
         <p><strong>Weight:</strong> ${weight} kg</p>
         <p><strong>Delivery Zone:</strong> ${
           isSameDistrict ? "Within Same District" : "Outside District"
         }</p>
-        <hr class="my-2"/>
-        <p><strong>Base Cost:</strong> ৳${baseCost}</p>
-        ${
-          extraCost > 0
-            ? `<p><strong>Extra Charges:</strong> ৳${extraCost}</p>`
-            : ""
-        }
-        <div class="text-gray-500 text-sm">${breakdown}</div>
-        <hr class="my-2"/>
-        <p class="text-xl font-bold text-green-600">Total Cost: ৳${totalCost}</p>
+        <hr class="my-3"/>
+        <details class="bg-yellow-50 border border-yellow-300 rounded-lg p-2">
+          <summary class="cursor-pointer font-bold text-yellow-700">See Pricing Breakdown</summary>
+          <div class="mt-2 text-sm space-y-1">
+            ${breakdownDetails}
+          </div>
+        </details>
+        <hr class="my-3"/>
+        <p class="text-lg font-bold text-green-600 text-center">Total Cost: ৳${totalCost}</p>
       </div>
     `,
+      width: 450,
       showDenyButton: true,
       confirmButtonText: "💳 Proceed to Payment",
       denyButtonText: "✏️ Continue Editing",
       confirmButtonColor: "#16a34a",
       denyButtonColor: "#d3d3d3",
-      customClass: {
-        popup: "rounded-xl shadow-md px-6 py-6",
-      },
+      customClass: { popup: "rounded-xl shadow-lg px-6 py-6" },
     }).then((result) => {
       if (result.isConfirmed) {
         const parcelData = {
           ...data,
           cost: totalCost,
           created_by: user.email,
+          sender_email: data.sender_email,
           payment_status: "unpaid",
           delivery_status: "not_collected",
           creation_date: new Date().toISOString(),
           tracking_id: generateTrackingID(),
         };
 
-        console.log("Ready for payment:", parcelData);
+        // Save to backend
+        axiosSecure
+          .post("/parcels", parcelData)
+          .then((res) => {
+            // Use res.data.insertedId only if backend returns it
+            const id = res.data.insertedId || res.data._id || "N/A";
+
+            Swal.fire({
+              title: "Parcel Added Successfully!",
+              icon: "success",
+              html: `
+              <p>Your parcel has been created.</p>
+              <p><strong>Tracking ID:</strong> ${parcelData.tracking_id}</p>
+              <p><strong>Total Cost:</strong> ৳${totalCost}</p>
+              <p><strong>Parcel ID:</strong> ${id}</p>
+            `,
+              confirmButtonText: "OK",
+              width: 400,
+              customClass: { popup: "rounded-xl shadow-lg px-4 py-4" },
+            });
+          })
+          .catch(() => {
+            Swal.fire({
+              title: "Error",
+              text: "Failed to create parcel. Please try again.",
+              icon: "error",
+              confirmButtonText: "OK",
+            });
+          });
       }
     });
   };

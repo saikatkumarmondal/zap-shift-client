@@ -4,17 +4,17 @@ import Services from "../Services/Services";
 import ClientLogosMarquee from "../ClientLogosMarquee/ClientLogosMarquee";
 import Supports from "../../Supports/Supports";
 import BeMerchant from "../BeMerchant/BeMerchant";
+import ParticleBackground from "../../ParticleBackground";
 
 const Home = () => {
   return (
-    <div>
-      {/* <h2>Om Namah Shivaya</h2> */}
-
-      <Banner></Banner>
-      <Services></Services>
-      <ClientLogosMarquee></ClientLogosMarquee>
-      <Supports></Supports>
-      <BeMerchant></BeMerchant>
+    <div className="relative min-h-screen">
+      {/* <ParticleBackground /> */}
+      <Banner />
+      <Services />
+      <ClientLogosMarquee />
+      <Supports />
+      <BeMerchant />
     </div>
   );
 };

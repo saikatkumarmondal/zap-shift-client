@@ -24,14 +24,12 @@ const Navbar = () => {
         <NavLink to="/coverage">Coverage</NavLink>
       </li>
 
-      <li>
-        <NavLink to="/about">About Us</NavLink>
-      </li>
-
       {user && (
-        <li onClick={handleLogout}>
-          <NavLink>Logout</NavLink>
-        </li>
+        <>
+          <li>
+            <NavLink to="/dashboard">Dashboard</NavLink>
+          </li>
+        </>
       )}
     </>
   );
