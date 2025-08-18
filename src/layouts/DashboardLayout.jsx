@@ -1,7 +1,13 @@
 import React from "react";
 import { NavLink, Outlet } from "react-router";
 import ProFastLogo from "../pages/shared/ProFastLogo/ProFastLogo";
-
+import {
+  HiHome,
+  HiCube,
+  HiCreditCard,
+  HiTruck,
+  HiUserCircle,
+} from "react-icons/hi2";
 const DashboardLayout = () => {
   return (
     <div className="drawer lg:drawer-open">
@@ -45,10 +51,43 @@ const DashboardLayout = () => {
           {/* Sidebar content here */}
           <ProFastLogo></ProFastLogo>
           <li>
-            <a>Home</a>
+            <NavLink to="/dashboard/home" className="flex items-center gap-2">
+              <HiHome className="text-xl" />
+              Home
+            </NavLink>
           </li>
           <li>
-            <NavLink to="/dashboard/myParcels">My Parcels</NavLink>
+            <NavLink
+              to="/dashboard/myParcels"
+              className="flex items-center gap-2"
+            >
+              <HiCube className="text-xl" />
+              My Parcels
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/dashboard/paymentHistory"
+              className="flex items-center gap-2"
+            >
+              <HiCreditCard className="text-xl" />
+              Payment History
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/dashboard/track" className="flex items-center gap-2">
+              <HiTruck className="text-xl" />
+              Track a Package
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/dashboard/profile"
+              className="flex items-center gap-2"
+            >
+              <HiUserCircle className="text-xl" />
+              Update Profile
+            </NavLink>
           </li>
         </ul>
       </div>
