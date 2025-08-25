@@ -7,7 +7,10 @@ import {
   HiCreditCard,
   HiTruck,
   HiUserCircle,
-} from "react-icons/hi2";
+  HiUser,
+  HiClock,
+} from "react-icons/hi";
+
 const DashboardLayout = () => {
   return (
     <div className="drawer lg:drawer-open">
@@ -51,7 +54,7 @@ const DashboardLayout = () => {
           {/* Sidebar content here */}
           <ProFastLogo></ProFastLogo>
           <li>
-            <NavLink to="/dashboard/home" className="flex items-center gap-2">
+            <NavLink to="/" className="flex items-center gap-2">
               <HiHome className="text-xl" />
               Home
             </NavLink>
@@ -87,6 +90,24 @@ const DashboardLayout = () => {
             >
               <HiUserCircle className="text-xl" />
               Update Profile
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/dashboard/approved-riders"
+              className="flex items-center gap-2"
+            >
+              <HiUser className="text-xl" />
+              Active Riders
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/dashboard/pending-riders"
+              className="flex items-center gap-2"
+            >
+              <HiClock className="text-xl" />
+              Pending Riders
             </NavLink>
           </li>
         </ul>
