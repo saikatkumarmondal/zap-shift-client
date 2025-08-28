@@ -34,6 +34,7 @@ const AssignRider = () => {
     queryKey: ["riders"],
     queryFn: async () => {
       const res = await axiosSecure.get("/riders");
+
       return res.data;
     },
   });
@@ -46,8 +47,10 @@ const AssignRider = () => {
         riderEmail,
         riderName,
       });
+      console.log(res);
       return res.data;
     },
+
     onSuccess: (_, variables) => {
       const { riderId, riderName } = variables;
       setAssignedRiderId(riderId);
