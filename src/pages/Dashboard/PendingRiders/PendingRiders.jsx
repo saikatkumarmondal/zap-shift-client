@@ -18,7 +18,7 @@ const PendingRiders = () => {
   } = useQuery({
     queryKey: ["pending-riders"],
     queryFn: async () => {
-      const res = await axiosSecure.get("/riders/rejected");
+      const res = await axiosSecure.get("/riders/pending");
       return res.data;
     },
   });
@@ -36,9 +36,9 @@ const PendingRiders = () => {
     setModalOpen(true);
   };
 
-  const handleApprove = async (id) => {
+  const handleApprove = async (id, email) => {
     try {
-      await axiosSecure.patch(`/riders/${id}`, { status: "accepted" }); // must be 'accepted'
+      await axiosSecure.patch(`/riders/${id}`, { status: "accepted", email }); // must be 'accepted'
       Swal.fire("Success", "Rider approved!", "success");
       refetch();
     } catch (error) {
@@ -47,10 +47,11 @@ const PendingRiders = () => {
     }
   };
 
-  const handleCancel = async (riderId) => {
+  const handleCancel = async (riderId, email) => {
     try {
       await axiosSecure.patch(`http://localhost:7777/api/riders/${riderId}`, {
         status: "rejected",
+        email,
       });
 
       Swal.fire("Success", "Rider cancelled!", "success");
@@ -151,7 +152,7 @@ const PendingRiders = () => {
                           <HiEye className="text-base sm:text-xl" />
                         </button>
                         <button
-                          onClick={() => handleApprove(rider._id)}
+                          onClick={() => handleApprove(rider._id, rider.email)}
                           className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-600 text-white shadow-md
                                      hover:bg-green-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                           title="Approve Rider"
@@ -159,7 +160,7 @@ const PendingRiders = () => {
                           <HiCheckCircle className="text-base sm:text-xl" />
                         </button>
                         <button
-                          onClick={() => handleCancel(rider._id)}
+                          onClick={() => handleCancel(rider._id, rider.email)}
                           className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-red-600 text-white shadow-md
                                      hover:bg-red-700 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
                           title="Cancel Rider"

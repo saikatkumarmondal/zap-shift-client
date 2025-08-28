@@ -18,7 +18,7 @@ const Login = () => {
     signIn(data.email, data.password)
       .then((result) => {
         //console.log(result.user);
-        navigate(from);
+        navigate(from || "/dashboard");
       })
       .catch((error) => {
         console.error("Login failed:", error);

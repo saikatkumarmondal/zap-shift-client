@@ -1,22 +1,36 @@
 import React from "react";
 import { NavLink, Outlet } from "react-router";
 import ProFastLogo from "../pages/shared/ProFastLogo/ProFastLogo";
+import useUserRole from "../hooks/useUserRole";
+import { MdTwoWheeler } from "react-icons/md";
+
 import {
   HiHome,
   HiCube,
   HiCreditCard,
-  HiTruck,
+  HiOutlineClipboardList,
   HiUserCircle,
   HiUser,
   HiClock,
+  HiShieldCheck,
+  HiTruck,
 } from "react-icons/hi";
+import { FaMotorcycle } from "react-icons/fa";
 
 const DashboardLayout = () => {
+  const { role, roleLoading } = useUserRole();
+  // console.log(role);
+  console.log("role1", role);
+  const linkStyle = ({ isActive }) =>
+    isActive
+      ? "flex items-center gap-3 px-4 py-2 rounded-lg bg-blue-600 text-white shadow-md"
+      : "flex items-center gap-3 px-4 py-2 rounded-lg text-gray-700 hover:bg-blue-100 hover:text-blue-700 transition-all";
+
   return (
     <div className="drawer lg:drawer-open">
       <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content flex flex-col ">
-        {/* Navbar */}
+        {/* Navbar (mobile only) */}
         <div className="navbar bg-base-300 w-full lg:hidden">
           <div className="flex-none lg:hidden">
             <label
@@ -39,77 +53,101 @@ const DashboardLayout = () => {
               </svg>
             </label>
           </div>
-          <div className="mx-2 flex-1 px-2 lg:hidden">Dashboard</div>
+          <div className="mx-2 flex-1 px-2 lg:hidden font-bold text-lg">
+            Dashboard
+          </div>
         </div>
         {/* page content */}
         <Outlet></Outlet>
       </div>
+
+      {/* Sidebar */}
       <div className="drawer-side">
         <label
           htmlFor="my-drawer-2"
           aria-label="close sidebar"
           className="drawer-overlay"
         ></label>
-        <ul className="menu bg-base-200 text-base-content min-h-full w-80 p-4">
-          {/* Sidebar content here */}
-          <ProFastLogo></ProFastLogo>
+        <ul className="menu bg-base-200 text-base-content min-h-full w-80 p-4 space-y-2">
+          {/* Logo */}
+          <ProFastLogo />
+
+          {/* Nav Links */}
           <li>
-            <NavLink to="/" className="flex items-center gap-2">
+            <NavLink to="/" className={linkStyle}>
               <HiHome className="text-xl" />
               Home
             </NavLink>
           </li>
           <li>
-            <NavLink
-              to="/dashboard/myParcels"
-              className="flex items-center gap-2"
-            >
+            <NavLink to="/dashboard/myParcels" className={linkStyle}>
               <HiCube className="text-xl" />
               My Parcels
             </NavLink>
           </li>
           <li>
-            <NavLink
-              to="/dashboard/paymentHistory"
-              className="flex items-center gap-2"
-            >
+            <NavLink to="/dashboard/paymentHistory" className={linkStyle}>
               <HiCreditCard className="text-xl" />
               Payment History
             </NavLink>
           </li>
           <li>
-            <NavLink to="/dashboard/track" className="flex items-center gap-2">
+            <NavLink to="/dashboard/track" className={linkStyle}>
               <HiTruck className="text-xl" />
               Track a Package
             </NavLink>
           </li>
           <li>
-            <NavLink
-              to="/dashboard/profile"
-              className="flex items-center gap-2"
-            >
+            <NavLink to="/dashboard/profile" className={linkStyle}>
               <HiUserCircle className="text-xl" />
               Update Profile
             </NavLink>
           </li>
-          <li>
-            <NavLink
-              to="/dashboard/approved-riders"
-              className="flex items-center gap-2"
-            >
-              <HiUser className="text-xl" />
-              Active Riders
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/dashboard/pending-riders"
-              className="flex items-center gap-2"
-            >
-              <HiClock className="text-xl" />
-              Pending Riders
-            </NavLink>
-          </li>
+
+          {/* rider links */}
+          {!roleLoading && role === "rider" && (
+            <>
+              <li>
+                <NavLink
+                  to="/dashboard/pending-deliveries"
+                  className={linkStyle}
+                >
+                  <HiOutlineClipboardList className="text-xl" />
+                  Pending Deliveries
+                </NavLink>
+              </li>
+            </>
+          )}
+
+          {/* admin links */}
+          {!roleLoading && role === "admin" && (
+            <>
+              <li>
+                <NavLink to="/dashboard/makeAdmin" className={linkStyle}>
+                  <HiShieldCheck className="text-xl" />
+                  Make Admin
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/dashboard/approved-riders" className={linkStyle}>
+                  <HiUser className="text-xl" />
+                  Active Riders
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/dashboard/pending-riders" className={linkStyle}>
+                  <HiClock className="text-xl" />
+                  Pending Riders
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/dashboard/assign-rider" className={linkStyle}>
+                  <MdTwoWheeler className="text-xl" />
+                  Assign Rider
+                </NavLink>
+              </li>
+            </>
+          )}
         </ul>
       </div>
     </div>

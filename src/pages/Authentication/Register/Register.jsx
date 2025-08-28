@@ -15,7 +15,7 @@ const Register = () => {
   const navigate = useNavigate();
   const axiosInstance = useAxios();
   const location = useLocation();
-  const from = location.state?.from || "/";
+  const from = location.state?.from || "/dashboard";
   const {
     register,
     handleSubmit,

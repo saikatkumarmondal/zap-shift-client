@@ -75,12 +75,22 @@ const Navbar = () => {
         {/* Show Register and Login when no user is logged in */}
         {!user && (
           <>
-            <a className="btn mr-2">
-              <NavLink to="/register">Register</NavLink>
-            </a>
-            <a className="btn">
-              <NavLink to="/login">Login</NavLink>
-            </a>
+            <NavLink
+              to="/register"
+              className={({ isActive }) =>
+                `btn mr-2 ${isActive ? "bg-blue-600 text-white" : ""}`
+              }
+            >
+              Register
+            </NavLink>
+            <NavLink
+              to="/login"
+              className={({ isActive }) =>
+                `btn mr-2 ${isActive ? "bg-blue-600 text-white" : ""}`
+              }
+            >
+              Login
+            </NavLink>
           </>
         )}
 

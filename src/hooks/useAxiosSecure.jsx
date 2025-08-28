@@ -1,34 +1,44 @@
 import axios from "axios";
-import { useEffect } from "react";
+import React from "react";
 import useAuth from "./useAuth";
-
-// Create axios instance
+import { useNavigate } from "react-router";
 const axiosSecure = axios.create({
-  baseURL: "http://localhost:7777",
+  baseURL: `http://localhost:7777`,
 });
-
 const useAxiosSecure = () => {
-  const { user } = useAuth();
+  const { user, logOut } = useAuth();
+  const navigate = useNavigate();
+  axiosSecure.interceptors.request.use(
+    (config) => {
+      config.headers.Authorization = `Bearer ${user.accessToken}`;
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
 
-  useEffect(() => {
-    if (!user) return;
-
-    // Add interceptor
-    const interceptor = axiosSecure.interceptors.request.use(
-      async (config) => {
-        const token = await user.getIdToken();
-        config.headers.Authorization = `Bearer ${token}`;
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
-
-    // Cleanup: remove interceptor when user/logs out or component unmounts
-    return () => {
-      axiosSecure.interceptors.request.eject(interceptor);
-    };
-  }, [user]);
-
+  axiosSecure.interceptors.response.use(
+    (res) => {
+      return res;
+    },
+    (error) => {
+      console.log("inside res interceptor:-", error.status);
+      const status = error.status;
+      if (status === 403) {
+        navigate("/forbidden");
+      } else if (status === 401) {
+        logOut()
+          .them((res) => {
+            navigate("/login");
+          })
+          .catch((error) => {
+            console.log(error);
+          });
+      }
+      return Promise.reject(error);
+    }
+  );
   return axiosSecure;
 };
 

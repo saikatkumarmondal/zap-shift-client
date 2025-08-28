@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import useAuth from "../../hooks/useAuth";
 
 import useAxiosSecure from "../../hooks/useAxiosSecure";
@@ -21,7 +21,7 @@ const SendParcel = () => {
   } = useForm();
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
-
+  const navigate = useNavigate();
   const serviceCenters = useLoaderData();
   // Extract unique regions
   const uniqueRegions = [...new Set(serviceCenters.map((w) => w.region))];
@@ -137,6 +137,8 @@ const SendParcel = () => {
               width: 400,
               customClass: { popup: "rounded-xl shadow-lg px-4 py-4" },
             });
+
+            navigate(`/dashboard/myParcels`);
           })
           .catch(() => {
             Swal.fire({
