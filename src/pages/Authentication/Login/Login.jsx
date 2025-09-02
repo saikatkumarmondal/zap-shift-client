@@ -19,6 +19,7 @@ const Login = () => {
       .then((result) => {
         //console.log(result.user);
         navigate(from || "/dashboard");
+        console.log(result);
       })
       .catch((error) => {
         console.error("Login failed:", error);

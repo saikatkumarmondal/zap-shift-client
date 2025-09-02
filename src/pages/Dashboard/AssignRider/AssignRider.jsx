@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import Swal from "sweetalert2";
 import useAxiosSecure from "../../../hooks/useAxiosSecure";
 
 const AssignRider = () => {
-  const queryClient = useQueryClient();
   const axiosSecure = useAxiosSecure();
 
   const [selectedParcel, setSelectedParcel] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assignedRiderId, setAssignedRiderId] = useState(null);
   const [serviceCenters, setServiceCenters] = useState([]);
+  const [parcels, setParcels] = useState([]);
 
   // Fetch service centers from public folder
   useEffect(() => {
@@ -21,7 +21,7 @@ const AssignRider = () => {
   }, []);
 
   // Fetch unassigned parcels
-  const { data: parcels = [], isLoading: parcelsLoading } = useQuery({
+  const { data: parcelsData = [], isLoading: parcelsLoading } = useQuery({
     queryKey: ["unassignedParcels"],
     queryFn: async () => {
       const res = await axiosSecure.get("/parcels?status=not_collected");
@@ -29,12 +29,16 @@ const AssignRider = () => {
     },
   });
 
+  // Sync query data with local state
+  useEffect(() => {
+    setParcels(parcelsData);
+  }, [parcelsData]);
+
   // Fetch riders
   const { data: allRiders = [], isLoading: ridersLoading } = useQuery({
     queryKey: ["riders"],
     queryFn: async () => {
       const res = await axiosSecure.get("/riders");
-
       return res.data;
     },
   });
@@ -47,20 +51,25 @@ const AssignRider = () => {
         riderEmail,
         riderName,
       });
-      console.log(res);
       return res.data;
     },
-
     onSuccess: (_, variables) => {
       const { riderId, riderName } = variables;
       setAssignedRiderId(riderId);
-      queryClient.invalidateQueries(["unassignedParcels"]);
+
+      // Remove assigned parcel from local list
+      setParcels((prev) =>
+        prev.filter((parcel) => parcel._id !== selectedParcel._id)
+      );
+
       Swal.fire(
         "Rider Assigned!",
         `Rider ${riderName} is now assigned to parcel "${selectedParcel.title}".`,
         "success"
       );
+
       setIsModalOpen(false);
+      setSelectedParcel(null);
     },
     onError: (err) => {
       Swal.fire(
@@ -111,26 +120,36 @@ const AssignRider = () => {
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Unassigned Parcels</h2>
+      {/* Un assigned parcels */}
       <div className="space-y-3">
-        {parcels.map((parcel) => (
-          <div
-            key={parcel._id}
-            className="border p-3 rounded-lg flex justify-between items-center"
-          >
-            <div>
-              <p className="font-semibold">{parcel.title}</p>
-              <p className="text-sm text-gray-600">
-                Sender Center: {parcel.sender_center}
-              </p>
-            </div>
-            <button
-              onClick={() => handleOpenModal(parcel)}
-              className="btn btn-primary"
-            >
-              Assign Rider
-            </button>
-          </div>
-        ))}
+        {parcels.filter((parcel) => !parcel.assigned_rider).length > 0 ? (
+          parcels
+            .filter((parcel) => !parcel.assigned_rider) // ✅ only unassigned
+            .map((parcel) => (
+              <div
+                key={parcel._id}
+                className="border p-3 rounded-lg flex justify-between items-center"
+              >
+                <div>
+                  <p className="font-semibold">{parcel.title}</p>
+                  <p className="text-sm text-gray-600">
+                    Sender Center: {parcel.sender_center}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleOpenModal(parcel)}
+                  className="btn btn-primary"
+                >
+                  Assign Rider
+                </button>
+              </div>
+            ))
+        ) : (
+          // ✅ Show message if empty
+          <p className="text-red-500 text-center font-bold text-3xl">
+            No unassigned parcels left.
+          </p>
+        )}
       </div>
 
       {/* Modal */}

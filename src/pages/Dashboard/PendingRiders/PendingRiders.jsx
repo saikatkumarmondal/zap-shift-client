@@ -38,27 +38,23 @@ const PendingRiders = () => {
 
   const handleApprove = async (id, email) => {
     try {
-      await axiosSecure.patch(`/riders/${id}`, { status: "accepted", email }); // must be 'accepted'
-      Swal.fire("Success", "Rider approved!", "success");
+      await axiosSecure.patch(`/riders/${id}`, { status: "accepted", email });
+      Swal.fire("✅ Success", "Rider approved & assigned!", "success");
       refetch();
-    } catch (error) {
-      Swal.fire("Error", "Failed to approve rider", "error");
-      console.error(error.response?.data || error);
+    } catch (err) {
+      Swal.fire("❌ Error", "Failed to approve rider", "error");
+      console.log(err);
     }
   };
 
-  const handleCancel = async (riderId, email) => {
+  const handleCancel = async (id, email) => {
     try {
-      await axiosSecure.patch(`http://localhost:7777/api/riders/${riderId}`, {
-        status: "rejected",
-        email,
-      });
-
-      Swal.fire("Success", "Rider cancelled!", "success");
+      await axiosSecure.patch(`/riders/${id}`, { status: "rejected", email });
+      Swal.fire("✅ Success", "Rider rejected!", "success");
       refetch();
-    } catch (error) {
-      console.error(error);
-      Swal.fire("Error", "Failed to cancel rider", "error");
+    } catch (err) {
+      Swal.fire("❌ Error", "Failed to reject rider", "error");
+      console.log(err);
     }
   };
 

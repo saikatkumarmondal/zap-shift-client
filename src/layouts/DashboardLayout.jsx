@@ -14,6 +14,8 @@ import {
   HiClock,
   HiShieldCheck,
   HiTruck,
+  HiOutlineClipboardCheck,
+  HiOutlineCash,
 } from "react-icons/hi";
 import { FaMotorcycle } from "react-icons/fa";
 
@@ -114,6 +116,21 @@ const DashboardLayout = () => {
                 >
                   <HiOutlineClipboardList className="text-xl" />
                   Pending Deliveries
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/dashboard/completed-deliveries"
+                  className={linkStyle}
+                >
+                  <HiOutlineClipboardCheck className="text-xl" />
+                  Completed Deliveries
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/dashboard/my-earnings" className={linkStyle}>
+                  <HiOutlineCash className="text-xl" />
+                  My Earnings
                 </NavLink>
               </li>
             </>

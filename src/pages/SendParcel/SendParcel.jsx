@@ -235,6 +235,8 @@ const SendParcel = () => {
                 {...register("sender_name", { required: true })}
                 className="input input-bordered w-full"
                 placeholder="Name"
+                defaultValue={user?.displayName} // ✅ pre-fill with logged in user's name
+                readOnly // ✅ makes it uneditable
               />
               <input
                 {...register("sender_contact", { required: true })}
