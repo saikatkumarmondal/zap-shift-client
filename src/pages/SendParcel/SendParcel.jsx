@@ -32,7 +32,9 @@ const SendParcel = () => {
   const parcelType = watch("type");
   const senderRegion = watch("sender_region");
   const receiverRegion = watch("receiver_region");
-  const onSubmit = (data) => {
+
+  // on submit
+  const onSubmit = async (data) => {
     const weight = parseFloat(data.weight) || 0;
     const isSameDistrict = data.sender_center === data.receiver_center;
 
@@ -40,7 +42,7 @@ const SendParcel = () => {
     let extraCost = 0;
     let breakdownDetails = "";
 
-    // Pricing logic (same as before)
+    // Pricing logic
     if (data.type === "document") {
       baseCost = isSameDistrict ? 60 : 80;
       breakdownDetails = `<p>Base Price: <strong>৳${baseCost}</strong> (${
@@ -75,8 +77,8 @@ const SendParcel = () => {
 
     const totalCost = baseCost + extraCost;
 
-    // First SweetAlert: Pricing Breakdown
-    Swal.fire({
+    // Show pricing alert
+    const result = await Swal.fire({
       title: "Delivery Cost",
       icon: "info",
       html: `
@@ -104,52 +106,66 @@ const SendParcel = () => {
       confirmButtonColor: "#16a34a",
       denyButtonColor: "#d3d3d3",
       customClass: { popup: "rounded-xl shadow-lg px-6 py-6" },
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const parcelData = {
-          ...data,
-          cost: totalCost,
-          created_by: user.email,
-          sender_email: data.sender_email,
-          payment_status: "unpaid",
-          delivery_status: "not_collected",
-          creation_date: new Date().toISOString(),
-          tracking_id: generateTrackingID(),
-        };
-
-        // Save to backend
-        axiosSecure
-          .post("/parcels", parcelData)
-          .then((res) => {
-            // Use res.data.insertedId only if backend returns it
-            const id = res.data.insertedId || res.data._id || "N/A";
-
-            Swal.fire({
-              title: "Parcel Added Successfully!",
-              icon: "success",
-              html: `
-              <p>Your parcel has been created.</p>
-              <p><strong>Tracking ID:</strong> ${parcelData.tracking_id}</p>
-              <p><strong>Total Cost:</strong> ৳${totalCost}</p>
-              <p><strong>Parcel ID:</strong> ${id}</p>
-            `,
-              confirmButtonText: "OK",
-              width: 400,
-              customClass: { popup: "rounded-xl shadow-lg px-4 py-4" },
-            });
-
-            navigate(`/dashboard/myParcels`);
-          })
-          .catch(() => {
-            Swal.fire({
-              title: "Error",
-              text: "Failed to create parcel. Please try again.",
-              icon: "error",
-              confirmButtonText: "OK",
-            });
-          });
-      }
     });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      // 1️⃣ Generate single tracking ID
+      const trackingId = generateTrackingID();
+
+      // 2️⃣ Prepare parcel data
+      const parcelData = {
+        ...data,
+        cost: totalCost,
+        created_by: user.email,
+        payment_status: "unpaid",
+        delivery_status: "not_collected",
+        creation_date: new Date().toISOString(),
+        tracking_id: trackingId, // same ID
+      };
+
+      // 3️⃣ Save parcel
+      const parcelRes = await axiosSecure.post("/parcels", parcelData);
+      const parcelId = parcelRes.data.insertedId; // updated backend returns insertedId
+      if (!parcelId) throw new Error("Parcel ID not returned from backend");
+
+      // 4️⃣ Save initial tracking info
+      await axiosSecure.post("/trackings", {
+        parcelId: parcelId.toString(), // must be string for backend ObjectId
+        tracking_id: trackingId, // same tracking ID
+        status: "submitted",
+        location: data.sender_center, // pickup location
+        updatedBy: user.email || "system",
+      });
+
+      // 5️⃣ Success alert
+      await Swal.fire({
+        title: "Parcel Added Successfully!",
+        icon: "success",
+        html: `
+        <p>Your parcel has been created.</p>
+        <p><strong>Tracking ID:</strong> ${trackingId}</p>
+        <p><strong>Total Cost:</strong> ৳${totalCost}</p>
+        <p><strong>Parcel ID:</strong> ${parcelId}</p>
+      `,
+        confirmButtonText: "OK",
+        width: 400,
+        customClass: { popup: "rounded-xl shadow-lg px-4 py-4" },
+      });
+
+      navigate("/dashboard/myParcels");
+    } catch (err) {
+      console.error("Error creating parcel or tracking:", err);
+      Swal.fire({
+        title: "Error",
+        text:
+          err.message ||
+          "Failed to create parcel or tracking info. Please try again.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+    }
   };
 
   return (
