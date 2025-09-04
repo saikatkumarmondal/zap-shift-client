@@ -46,6 +46,7 @@ const AssignRider = () => {
   // Mutation: assign rider
   const assignRiderMutation = useMutation({
     mutationFn: async ({ parcelId, riderId, riderEmail, riderName }) => {
+      // 1️⃣ Assign rider to parcel
       const res = await axiosSecure.patch(`/parcels/${parcelId}/assign-rider`, {
         riderId,
         riderEmail,
@@ -53,21 +54,56 @@ const AssignRider = () => {
       });
       return res.data;
     },
-    onSuccess: (_, variables) => {
+    onSuccess: async (_, variables) => {
       const { riderId, riderName } = variables;
       setAssignedRiderId(riderId);
 
-      // Remove assigned parcel from local list
+      // 2️⃣ Remove assigned parcel from local state
       setParcels((prev) =>
         prev.filter((parcel) => parcel._id !== selectedParcel._id)
       );
 
+      // 3️⃣ Add tracking entry
+      try {
+        let location = selectedParcel.sender_center; // default location
+
+        // optional: use browser geolocation if available
+        if (navigator.geolocation) {
+          await new Promise((resolve) => {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                location = {
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                };
+                resolve();
+              },
+              () => resolve() // fallback if user denies permission
+            );
+          });
+        }
+
+        await axiosSecure.post("/trackings", {
+          tracking_id: selectedParcel.tracking_id,
+          status: "Rider Assigned",
+          updatedBy: riderName || "system",
+          parcelId: selectedParcel._id,
+          riderId,
+          timestamp: new Date().toISOString(),
+          location,
+        });
+      } catch (err) {
+        console.error("Tracking update failed:", err);
+      }
+
+      // 4️⃣ Show success message
       Swal.fire(
         "Rider Assigned!",
         `Rider ${riderName} is now assigned to parcel "${selectedParcel.title}".`,
         "success"
       );
 
+      // 5️⃣ Close modal
       setIsModalOpen(false);
       setSelectedParcel(null);
     },
@@ -96,7 +132,7 @@ const AssignRider = () => {
     });
   };
 
-  // Filter riders based on service center for selected parcel
+  // Filter riders based on service center
   const getAvailableRiders = () => {
     if (!selectedParcel || !serviceCenters.length) return [];
     const center = serviceCenters.find(
@@ -120,11 +156,11 @@ const AssignRider = () => {
   return (
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Unassigned Parcels</h2>
-      {/* Un assigned parcels */}
+
       <div className="space-y-3">
         {parcels.filter((parcel) => !parcel.assigned_rider).length > 0 ? (
           parcels
-            .filter((parcel) => !parcel.assigned_rider) // ✅ only unassigned
+            .filter((parcel) => !parcel.assigned_rider)
             .map((parcel) => (
               <div
                 key={parcel._id}
@@ -145,14 +181,12 @@ const AssignRider = () => {
               </div>
             ))
         ) : (
-          // ✅ Show message if empty
           <p className="text-red-500 text-center font-bold text-3xl">
             No unassigned parcels left.
           </p>
         )}
       </div>
 
-      {/* Modal */}
       {isModalOpen && (
         <dialog className="modal modal-open">
           <div className="modal-box w-11/12 max-w-2xl">

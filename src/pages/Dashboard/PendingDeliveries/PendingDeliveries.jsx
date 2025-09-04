@@ -27,16 +27,15 @@ const PendingDeliveries = () => {
     fetchParcels();
   }, [axiosSecure, user?.email]);
 
-  // ✅ Handle Picked Up Action
   const handleToggleDelivery = async (parcelId) => {
     try {
+      // 1️⃣ Toggle delivery status
       const res = await axiosSecure.patch(
         `/parcels/${parcelId}/toggle-delivery`
       );
-
       const { newStatus } = res.data;
 
-      // Update parcel in UI
+      // 2️⃣ Update UI
       setParcels((prev) =>
         prev.map((parcel) =>
           parcel._id === parcelId
@@ -44,6 +43,27 @@ const PendingDeliveries = () => {
             : parcel
         )
       );
+
+      // 3️⃣ Add tracking if status is 'in-transit'
+      if (newStatus === "in-transit") {
+        const parcel = parcels.find((p) => p._id === parcelId);
+
+        await axiosSecure.post("/trackings", {
+          parcelId: parcel._id,
+          tracking_id: parcel.tracking_id,
+          status: newStatus,
+          updatedBy: user.email || "system",
+          timestamp: new Date().toISOString(),
+          location: parcel.sender_center || "Unknown",
+          riderId: parcel.assigned_rider || null,
+        });
+
+        Swal.fire(
+          "Success!",
+          `Parcel "${parcel.title}" is now In-Transit and tracking has been saved.`,
+          "success"
+        );
+      }
     } catch (error) {
       console.error("Failed to toggle delivery status:", error);
       Swal.fire("Error!", "Failed to update delivery status.", "error");

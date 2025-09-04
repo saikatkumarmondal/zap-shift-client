@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router";
 import ProFastLogo from "../pages/shared/ProFastLogo/ProFastLogo";
 import useUserRole from "../hooks/useUserRole";
-import { MdTwoWheeler } from "react-icons/md";
+import { MdSpatialTracking, MdTwoWheeler } from "react-icons/md";
 
 import {
   HiHome,
@@ -18,9 +18,28 @@ import {
   HiOutlineCash,
 } from "react-icons/hi";
 import { FaMotorcycle } from "react-icons/fa";
+import useAxiosSecure from "../hooks/useAxiosSecure";
+import useAuth from "../hooks/useAuth";
 
 const DashboardLayout = () => {
+  const { user } = useAuth();
   const { role, roleLoading } = useUserRole();
+  const [parcels, setParcels] = useState([]);
+
+  useEffect(() => {
+    const fetchParcels = async () => {
+      try {
+        if (!user?.email) return;
+
+        const res = await useAxiosSecure.get(`/parcels/user/${user.email}`);
+        setParcels(res.data); // store array of parcels
+      } catch (error) {
+        console.error("Error fetching parcels:", error);
+      }
+    };
+
+    fetchParcels();
+  }, [user?.email, useAxiosSecure]);
   // console.log(role);
   console.log("role1", role);
   const linkStyle = ({ isActive }) =>
@@ -103,6 +122,15 @@ const DashboardLayout = () => {
             <NavLink to="/dashboard/profile" className={linkStyle}>
               <HiUserCircle className="text-xl" />
               Update Profile
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to={`/dashboard/trackById/${parcels.tracking_id}`}
+              className={linkStyle}
+            >
+              <MdSpatialTracking className="text-xl" />
+              Track By Id
             </NavLink>
           </li>
 

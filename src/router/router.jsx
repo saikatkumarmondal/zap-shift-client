@@ -23,6 +23,8 @@ import RiderRoute from "../routes/RiderRoute";
 import PendingDeliveries from "../pages/Dashboard/PendingDeliveries/PendingDeliveries";
 import CompletedDeliveries from "../pages/Dashboard/CompletedDeliveries/CompletedDeliveries";
 import MyEarning from "../pages/Dashboard/MyEarning/MyEarning";
+import TrackById from "../pages/Dashboard/TrackById/TrackById";
+import DashboardHome from "../pages/Dashboard/DashboardHome/DashboardHome";
 
 export const router = createBrowserRouter([
   {
@@ -66,6 +68,10 @@ export const router = createBrowserRouter([
         ),
         children: [
           {
+            index: true,
+            Component: DashboardHome,
+          },
+          {
             path: "myParcels",
             Component: MyParcel,
           },
@@ -80,6 +86,10 @@ export const router = createBrowserRouter([
           {
             path: "track",
             Component: Track,
+          },
+          {
+            path: "trackById/:trackingId", // make it relative, remove the leading slash
+            Component: TrackById,
           },
           //rider routes
           {

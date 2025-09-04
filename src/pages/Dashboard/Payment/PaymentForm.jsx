@@ -96,7 +96,19 @@ const PaymentForm = () => {
             title: "Payment Successful",
             html: `Transaction ID: <b>${transitionId}</b>`,
             confirmButtonText: "Go to My Parcels",
-          }).then(() => {
+          }).then(async () => {
+            await axiosSecure.post("/trackings", {
+              tracking_id: parcelInfo.tracking_id,
+              status: "Payment Done",
+              updatedBy: user.email || "system",
+            });
+
+            console.log({
+              parcelId,
+              paymentIntentId: result.paymentIntent.id,
+              userEmail: user.email,
+              amount: parcelInfo.cost,
+            });
             navigate("/dashboard/myParcels");
           });
         }
